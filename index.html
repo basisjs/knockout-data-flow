@@ -1,0 +1,110 @@
+<!doctype html>
+
+<html>
+<head>
+  <script src="lib/knockout-3.1.0.debug.patched.js"></script>
+  <script src="node_modules/basisjs/src/basis.js" basis-config="devpanel:false"></script>
+  <style>
+    body
+    {
+      background: #F0F0F0;
+      font-size: small;
+      font-family: Tahoma, Verdana, Arial, sans-serif;
+    }
+    #demo-container
+    {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-start;
+    }
+  </style>
+</head>
+<body>
+  <div id="demo-container"></div>
+  <script>
+    var ReadOnlyDataset = basis.require('basis.data').ReadOnlyDataset;
+    var Flow = basis.require('./node_modules/basisjs/src/devpanel/module/data-flow/index.js');
+    var UINode = basis.require('basis.ui').Node;
+    var getSource = basis.require('basis.utils.source').getSource;
+    var container = document.getElementById('demo-container');
+
+    function openFile(filename){
+      var basisjsTools = typeof basisjsToolsFileSync != 'undefined' ? basisjsToolsFileSync : basis.devtools;
+
+      if (basisjsTools && typeof basisjsTools.openFile == 'function')
+        basisjsTools.openFile(basis.path.resolve(filename.replace(/(:\d+:\d+):\d+:\d+$/, '$1')));
+    }
+
+    var buildTree = Flow.createTreeBuilder({
+      sandbox: basis,
+      getInfo: function(target, key){
+        if (key === 'sourceInfo') {
+          return ko.$devinfo.get(target);
+        }
+
+        var info = {};
+        var koInfo = ko.$devinfo.get(target);
+        var devInfo = $devinfo.get(target);
+
+        if (koInfo) {
+          info.sourceInfo = koInfo;
+        }
+
+        if (devInfo) {
+          for (var key in devInfo) {
+            info[key] = devInfo[key];
+          }
+        }
+       
+        return key ? info[key] : info;
+      },
+      resolveValue: function(value){
+        if (value && '_latestValue' in value) {
+          return value._latestValue;
+        }
+
+        return value;
+      }
+    });
+
+    var View = UINode.subclass({
+      template: basis.resource('./template/view.tmpl'),
+      binding: {
+        name: 'name',
+        source: 'source',
+        flow: 'satellite:'
+      },
+      satellite: {
+        flow: 'flow'
+      }
+    });
+
+    [
+      'observable',
+      'compute',
+      // 'update',
+      '1'
+    ].forEach(function(name){
+      var filename = './cases/' + name + '.js';
+      var value = basis.require(filename);
+      var flow = new Flow({
+        fileAPI: {
+          openFile: openFile
+        },
+        childNodes: buildTree(value)
+      });
+
+      // setInterval(function() {
+      //   flow.setChildNodes(buildTree(value));
+      // }, 1000);
+
+      new View({
+        container: container,
+        name: name,
+        source: getSource(filename),
+        flow: flow
+      });
+    });
+  </script>
+</body>
+</html>

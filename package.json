@@ -1,0 +1,14 @@
+{
+  "name": "t16",
+  "version": "1.0.0",
+  "description": "Experimental basis.js data flow adaptation for knockout",
+  "scripts": {
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "basisjs": "github:basisjs/basisjs",
+    "basisjs-tools": "^1.8.0",
+    "basisjs-tools-instrumenter": "^1.0.3"
+  }
+}
